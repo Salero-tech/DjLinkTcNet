@@ -6,4 +6,4 @@ net = tcNet()
 
 
 while True:
-    net.loop()
+    net.handleRec()

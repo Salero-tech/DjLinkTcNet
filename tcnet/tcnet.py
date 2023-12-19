@@ -1,12 +1,15 @@
 from tcnet.data.message import message
 from tcnet.data.node import Node
+from tcnet.data.mHeader import mHeader
 import threading
 import socket
+from tcnet.datObj import DataObj
 
-UDP_IP = "192.168.178.29"
+UDP_IP = ""
 UDP_PORT = 60000
 
 class tcNet:
+  send_Lock = threading.Lock()
   #socket
   sock:socket.socket
   sock_Lock = threading.Lock()
@@ -22,6 +25,9 @@ class tcNet:
   #nodes
   nodeList:list[Node] = []
 
+  #self
+  dataObj = DataObj()
+
   def __init__(self) -> None:
     self.createSocket()
     self.startRecThread()
@@ -34,22 +40,28 @@ class tcNet:
     self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
   def receive (self):
-    data, addr = self.sock.recvfrom(1024) # buffer size is 1024 bytes
-    #with self.recCache_Lock:
-    self.recCache.append(message(data, addr))
+    try:
+      #read header
+      data, addr = self.sock.recvfrom(mHeader.HEADER_WITH) # buffer size
+      header = mHeader.fromBytes(data)
+      print(header.msgType)
+      #read data
+      data, addr = self.sock.recvfrom(message.getDataSize(header)) # buffer size is 1024 bytes
+      #with self.recCache_Lock:
+      self.recCache.append(message.fromBytes(header ,data, addr[0]))
+    except:
+      print("fail to read")
+      return
 
   def send (self, ip:str, port:int, data:bytes):
-    self.sock.sendto(data,(ip, port))
+    with self.send_Lock:
+      self.sock.sendto(data,(ip, port))
      
 
   #logic
-  def loop (self):
-    #handle keep alive
-    #with self.recCache_Lock:
-    if self.recCache.__len__() > 0:
-      self.handleRec()
-
   def handleRec (self):
+    if self.recCache.__len__() <= 0:
+      return
     msg = self.recCache.pop(0)
     #node list
     if msg.typeAsStr == "optIn":
@@ -63,7 +75,7 @@ class tcNet:
     #check if alread in list if so update last contact
     for node in self.nodeList:
       if node.id == msg.header.id:
-        #update stuff
+        node = Node(msg)
         return
     #add to list
     self.nodeList.append(Node(msg))
@@ -78,13 +90,16 @@ class tcNet:
         self.nodeList.remove(removeNode)
 
   def sendOptIn (self):
-    self.send("192.168.178.255", 60000, b"hello")
+    self.send("192.168.178.255", 60000, self.dataObj.optIn)
     #broadcast + to all nodes on listening port
-    print("optin")
+    for node in self.nodeList:
+      self.send(node.ip, node.port, self.dataObj.optIn)
 
   def sendOptOut (self):
-    print("optout")
-
+    self.send("192.168.178.255", 60000, self.dataObj.optOut)
+    #broadcast + to all nodes on listening port
+    for node in self.nodeList:
+      self.send(node.ip, node.port, self.dataObj.optOut)
 
   #thread stuff
   def startRecThread (self):
@@ -102,7 +117,6 @@ class tcNet:
         if self.receiveActive == False:
           return
 
-      #send opt in
       self.receive()
       #thread start
       threading.Timer (

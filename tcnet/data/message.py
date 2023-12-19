@@ -2,10 +2,12 @@ from dataclasses import dataclass
 from tcnet.data.mHeader import mHeader
 from tcnet.data.optIn import optIn
 from tcnet.data.optOut import optOut
+from tcnet.data.statusPacket import StatusPacket
 
 msgTypeList = {
-    2: optIn,
-    3: optOut
+    2: [optIn, 68-mHeader.HEADER_WITH],
+    3: [optOut, 28-mHeader.HEADER_WITH],
+    5: [StatusPacket, 300-mHeader.HEADER_WITH],
 }
 
 
@@ -18,12 +20,21 @@ class message:
     data:any
     typeAsStr: str
 
-    def __init__(self, dataBytes:bytes, addr:str) -> None:
+    def __init__(self, header:mHeader, data:any, addr:str) -> None:
         self.ip = addr
-        self.header = mHeader(dataBytes)
-        self.data = msgTypeList[self.header.msgType](dataBytes)
-        self.typeAsStr = msgTypeList[self.header.msgType].__name__
+        self.header = header
+        self.data = data
+        self.typeAsStr = msgTypeList[self.header.msgType][0].__name__
+
+    def fromBytes (header:mHeader, dataBytes:bytes, addr:str):
+        print(header)
+        data = msgTypeList[header.msgType][0].fromBytes(dataBytes)
+        return message(header, data, addr)
 
     def getBytes (self):
-        pass
+        return self.header.getBytes() + self.data.getBytes()
+    
+    @staticmethod
+    def getDataSize (header:mHeader) -> int:
+        return msgTypeList[header.msgType][1]
         
