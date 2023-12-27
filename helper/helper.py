@@ -34,6 +34,14 @@ def bytesToIntArray (data:bytes) -> list[int]:
 
     return res
 
+def IntArrayTobytes (data:list[int]) -> bytes:
+    res:bytearray = []
+
+    for item in data:
+        res.append(item)
+
+    return bytes(res)
+
 
 def bytesLittleEndianToIntArray (data:bytes, sizeOfEndian:int) -> list[int]:
     res:list[int] = []
@@ -44,12 +52,17 @@ def bytesLittleEndianToIntArray (data:bytes, sizeOfEndian:int) -> list[int]:
         byteChunkArray.append(data[i:i+sizeOfEndian])
         i += sizeOfEndian
 
-    print(byteChunkArray)
-
     for chunk in byteChunkArray:
         res.append(littleEndianToInt(chunk))
 
     return res
+
+def IntArrayTobytesLittleEndian (data:list[int]) -> bytes:
+    res:bytearray = []
+
+    for item in data:
+        res.append(intToLittleEndian(item, 4))
+    return b''.join(res)
 
 def bytesToStringArray (data:bytes, perStrBytes:int) -> list[str]:
     res:list[str] = []
@@ -60,3 +73,11 @@ def bytesToStringArray (data:bytes, perStrBytes:int) -> list[str]:
         res.append(data[index:index+perStrBytes].decode("utf-8"))
 
     return res
+
+def stringArrayToBytes (data:list[str]) -> bytes:
+    res:bytearray = []
+    
+    for item in data:
+        res.append(item.encode("utf-8"))
+
+    return b''.join(res)

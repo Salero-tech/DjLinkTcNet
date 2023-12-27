@@ -44,9 +44,12 @@ class tcNet:
       #read header
       data, addr = self.sock.recvfrom(mHeader.HEADER_WITH) # buffer size
       header = mHeader.fromBytes(data)
-      print(header.msgType)
       #read data
       data, addr = self.sock.recvfrom(message.getDataSize(header)) # buffer size is 1024 bytes
+      #remove own data
+      print("read")
+      if (header.id == self.dataObj.id):
+        return
       #with self.recCache_Lock:
       self.recCache.append(message.fromBytes(header ,data, addr[0]))
     except:
@@ -56,7 +59,6 @@ class tcNet:
   def send (self, ip:str, port:int, data:bytes):
     with self.send_Lock:
       self.sock.sendto(data,(ip, port))
-     
 
   #logic
   def handleRec (self):
@@ -81,13 +83,16 @@ class tcNet:
     self.nodeList.append(Node(msg))
          
   def removeNodeFromList (self, msg:message):
-      removeNode:node = None
-      for node in self.nodeList:
+      removeNodeIndex:int = None
+      for node, i in enumerate(self.nodeList):
         if node.id == msg.header.id:
-           removeNode = node
+           removeNodeIndex = i
            break
-      if removeNode is not None:
-        self.nodeList.remove(removeNode)
+      if removeNodeIndex is not None:
+        self.nodeList.pop(removeNodeIndex)
+
+  def sendStatusPacket (self):
+    self.send("192.168.178.255", 60000, self.dataObj.statusPacket)
 
   def sendOptIn (self):
     self.send("192.168.178.255", 60000, self.dataObj.optIn)
@@ -143,6 +148,8 @@ class tcNet:
 
       #send opt in
       self.sendOptIn()
+      #send status packet
+      self.sendStatusPacket()
       #thread start
       threading.Timer (
         1, # ever 1000ms

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from helper.helper import littleEndianToInt, intToLittleEndian, bytesToIntArray, bytesLittleEndianToIntArray, bytesToStringArray
+from helper.helper import littleEndianToInt, intToLittleEndian, bytesToIntArray, bytesLittleEndianToIntArray, bytesToStringArray, IntArrayTobytes, IntArrayTobytesLittleEndian, stringArrayToBytes
 
 
 @dataclass
@@ -9,8 +9,10 @@ class StatusPacket:
     layerSource:list[int]
     layerStatus:list[int]
     layerTrackId:list[int]
+    smpteMode: int
     autoMasterMode:int
     layerName:list[str]
+
     
 
     def __init__(self, nodeCount, listenerPort, layerSource, layerStatus, layerTrackId, smpteMode, autoMasterMode, LayerName) -> None:
@@ -35,12 +37,23 @@ class StatusPacket:
         smpteMode = int.from_bytes(data[83:84])
         autoMasterMode = int.from_bytes(data[84:85])
         layerName = bytesToStringArray(data[172:300], 16)
-        print(StatusPacket(nodeCount, listenerPort, layerSource, layerStatus, layerTrackId, smpteMode, autoMasterMode, layerName))
         return StatusPacket(nodeCount, listenerPort, layerSource, layerStatus, layerTrackId, smpteMode, autoMasterMode, layerName)
     
     def getBytes (self):
         res:list[bytes] = []
         res.append(intToLittleEndian(self.nodeCount, 2))
         res.append(intToLittleEndian(self.listenerPort, 2))
+
+        res.append(IntArrayTobytes(self.layerSource))
+        res.append(IntArrayTobytes(self.layerStatus))
+        res.append(IntArrayTobytesLittleEndian(self.layerTrackId))
+        res.append(self.smpteMode.to_bytes())
+        res.append(self.autoMasterMode.to_bytes())
+        #reserved
+        res.append(b'\x00'*87)
+        res.append(stringArrayToBytes(self.layerName))
+
+
+
 
         return b''.join(res)
