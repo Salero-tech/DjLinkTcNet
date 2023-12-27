@@ -8,6 +8,7 @@ msgTypeList = {
     2: [optIn, 68-mHeader.HEADER_WITH],
     3: [optOut, 28-mHeader.HEADER_WITH],
     5: [StatusPacket, 300-mHeader.HEADER_WITH],
+    200: [StatusPacket, 0]
 }
 
 
@@ -27,7 +28,6 @@ class message:
         self.typeAsStr = msgTypeList[self.header.msgType][0].__name__
 
     def fromBytes (header:mHeader, dataBytes:bytes, addr:str):
-        print(header)
         data = msgTypeList[header.msgType][0].fromBytes(dataBytes)
         return message(header, data, addr)
 

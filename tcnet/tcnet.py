@@ -47,7 +47,6 @@ class tcNet:
       #read data
       data, addr = self.sock.recvfrom(message.getDataSize(header)) # buffer size is 1024 bytes
       #remove own data
-      print("read")
       if (header.id == self.dataObj.id):
         return
       #with self.recCache_Lock:
@@ -72,6 +71,7 @@ class tcNet:
     if msg.typeAsStr == "optOut":
        self.removeNodeFromList(msg)
        return
+    print("data?")
        
   def addNodeToList (self, msg:message):
     #check if alread in list if so update last contact
@@ -105,6 +105,14 @@ class tcNet:
     #broadcast + to all nodes on listening port
     for node in self.nodeList:
       self.send(node.ip, node.port, self.dataObj.optOut)
+
+  def sendMetaData (self):
+    for node in self.nodeList:
+      self.send(node.ip, node.port, self.dataObj.metaData)
+
+  def sendMetricData (self):
+    for node in self.nodeList:
+      self.send(node.ip, node.port, self.dataObj.MetricData)
 
   #thread stuff
   def startRecThread (self):
@@ -150,6 +158,8 @@ class tcNet:
       self.sendOptIn()
       #send status packet
       self.sendStatusPacket()
+      #self.sendMetaData()
+      #self.sendMetricData()
       #thread start
       threading.Timer (
         1, # ever 1000ms

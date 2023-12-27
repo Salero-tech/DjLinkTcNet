@@ -4,6 +4,8 @@ from tcnet.data.optIn import optIn
 from tcnet.data.optOut import optOut
 from tcnet.data.message import message
 from tcnet.data.statusPacket import StatusPacket
+from  tcnet.data.metaData import MetaData
+from  tcnet.data.metricData import MetricData
 
 @dataclass
 class DataObj:
@@ -27,5 +29,15 @@ class DataObj:
     
     @property
     def statusPacket (self):
-        package = StatusPacket(self.nodeCount, self.listenerPort, [0]*8, [5]*8, [1]*8, 24, 0, "test"*8)
+        package = StatusPacket(self.nodeCount, self.listenerPort, [0]*8, [3]*8, [1]*8, 24, 0, "test"*8)
         return message(self.header(5), package, self.ip).getBytes()
+    
+    @property
+    def metaData (self):
+        package = MetaData(1, "Hello world", "World Hello", 3, 0)
+        return message(self.header(200), package, self.ip).getBytes()
+    
+    @property
+    def MetricData (self):
+        package = MetricData(1,3,0,1,80000,60000,327668,99999,20000,32768,0)
+        return message(self.header(200), package, self.ip).getBytes()
